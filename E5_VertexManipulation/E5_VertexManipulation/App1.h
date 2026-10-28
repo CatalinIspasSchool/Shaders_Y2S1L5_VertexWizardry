@@ -5,6 +5,7 @@
 // Includes
 #include "DXF.h"	// include dxframework
 #include "ManipulationShader.h"
+#include <chrono>
 
 
 class App1 : public BaseApplication
@@ -23,8 +24,10 @@ protected:
 
 private:
 	ManipulationShader* shader;
-	SphereMesh* mesh;
+	PlaneMesh* mesh;
 	Light* light;
+	XMFLOAT4*waveInfo;
+	std::chrono::steady_clock::time_point startTime;
 };
 
 #endif

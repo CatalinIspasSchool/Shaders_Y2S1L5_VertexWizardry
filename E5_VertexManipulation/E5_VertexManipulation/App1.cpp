@@ -17,13 +17,16 @@ void App1::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeigh
 	textureMgr->loadTexture(L"brick", L"res/brick1.dds");
 
 	// Create Mesh object and shader object
-	mesh = new SphereMesh(renderer->getDevice(), renderer->getDeviceContext());
+	mesh = new PlaneMesh(renderer->getDevice(), renderer->getDeviceContext());
 	shader = new ManipulationShader(renderer->getDevice(), hwnd);
 	
 	// Confirgure directional light
 	light = new Light();
 	light->setDiffuseColour(1.0f, 1.0f, 1.0f, 1.0f);
 	light->setDirection(0.7f, -0.7f, 0.0f);
+
+	startTime = std::chrono::high_resolution_clock::now();
+	waveInfo = new XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
 
 }
 
@@ -58,6 +61,11 @@ bool App1::frame()
 		return false;
 	}
 	
+	//register the time elapsed
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime);
+	waveInfo->x = (float)duration.count() / 1000;
+
+
 	// Render the graphics.
 	result = render();
 	if (!result)
@@ -70,7 +78,7 @@ bool App1::frame()
 
 bool App1::render()
 {
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX planeMatrix, viewMatrix, projectionMatrix;
 
 	// Clear the scene. (default blue colour)
 	renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
@@ -79,13 +87,16 @@ bool App1::render()
 	camera->update();
 
 	// Get the world, view, projection, and ortho matrices from the camera and Direct3D objects.
-	worldMatrix = renderer->getWorldMatrix();
+	planeMatrix = XMMatrixTranslation(-10, -5, 0);
+
 	viewMatrix = camera->getViewMatrix();
 	projectionMatrix = renderer->getProjectionMatrix();
 
+
+
 	// Send geometry data, set shader parameters, render object with shader
 	mesh->sendData(renderer->getDeviceContext());
-	shader->setShaderParameters(renderer->getDeviceContext(), worldMatrix, viewMatrix, projectionMatrix, textureMgr->getTexture(L"brick"), light);
+	shader->setShaderParameters(renderer->getDeviceContext(), planeMatrix, viewMatrix, projectionMatrix, textureMgr->getTexture(L"brick"), light, waveInfo);
 	shader->render(renderer->getDeviceContext(), mesh->getIndexCount());
 
 	// Render GUI

@@ -7,6 +7,14 @@ cbuffer MatrixBuffer : register(b0)
 	matrix projectionMatrix;
 };
 
+cbuffer MatrixBuffer : register(b1)
+{
+    float time;
+    float frequency;
+    float amplitude;
+    float speed;
+};
+
 struct InputType
 {
 	float4 position : POSITION;
@@ -24,6 +32,9 @@ struct OutputType
 OutputType main(InputType input)
 {
 	OutputType output;
+	
+	//get the wave to affect y
+    input.position.y += sin((input.position.x + input.position.z) * frequency + time * speed) * amplitude;
 
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	output.position = mul(input.position, worldMatrix);

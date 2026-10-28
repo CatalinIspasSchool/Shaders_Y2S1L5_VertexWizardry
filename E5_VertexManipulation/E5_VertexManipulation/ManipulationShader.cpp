@@ -36,6 +36,12 @@ ManipulationShader::~ManipulationShader()
 		lightBuffer = 0;
 	}
 
+	if (waveBuffer)
+	{
+		waveBuffer->Release();
+		waveBuffer = 0;
+	}
+
 	//Release base shader components
 	BaseShader::~BaseShader();
 }
@@ -43,6 +49,7 @@ ManipulationShader::~ManipulationShader()
 void ManipulationShader::initShader(const wchar_t* vsFilename, const wchar_t* psFilename)
 {
 	D3D11_BUFFER_DESC matrixBufferDesc;
+	D3D11_BUFFER_DESC waveBufferDesc;
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
 
@@ -58,6 +65,15 @@ void ManipulationShader::initShader(const wchar_t* vsFilename, const wchar_t* ps
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 	renderer->CreateBuffer(&matrixBufferDesc, NULL, &matrixBuffer);
+
+	waveBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	waveBufferDesc.ByteWidth = sizeof(WaveBufferType);
+	waveBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	waveBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	waveBufferDesc.MiscFlags = 0;
+	waveBufferDesc.StructureByteStride = 0;
+	renderer->CreateBuffer(&waveBufferDesc, NULL, &waveBuffer);
+
 
 	// Create a texture sampler state description.
 	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -85,7 +101,7 @@ void ManipulationShader::initShader(const wchar_t* vsFilename, const wchar_t* ps
 }
 
 
-void ManipulationShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX &worldMatrix, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, ID3D11ShaderResourceView* texture, Light* light)
+void ManipulationShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX &worldMatrix, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, ID3D11ShaderResourceView* texture, Light* light, XMFLOAT4* waveInfo)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -98,6 +114,7 @@ void ManipulationShader::setShaderParameters(ID3D11DeviceContext* deviceContext,
 	tworld = XMMatrixTranspose(worldMatrix);
 	tview = XMMatrixTranspose(viewMatrix);
 	tproj = XMMatrixTranspose(projectionMatrix);
+
 	result = deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	dataPtr = (MatrixBufferType*)mappedResource.pData;
 	dataPtr->world = tworld;// worldMatrix;
@@ -106,14 +123,30 @@ void ManipulationShader::setShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->Unmap(matrixBuffer, 0);
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
 
+	//waveInfo for the vertex buffer
+	WaveBufferType* wavePtr;
+	
+	result = deviceContext->Map(waveBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	wavePtr = (WaveBufferType*)mappedResource.pData;
+	wavePtr->time = waveInfo->x;
+	wavePtr->frequency = waveInfo->y;
+	wavePtr->amplitude = waveInfo->z;
+	wavePtr->speed = waveInfo->w;
+
+	deviceContext->Unmap(waveBuffer, 0);
+	deviceContext->VSSetConstantBuffers(1, 1, &waveBuffer);
+
 	//Additional
 	// Send light data to pixel shader
 	LightBufferType* lightPtr;
 	deviceContext->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
 	lightPtr = (LightBufferType*)mappedResource.pData;
 	lightPtr->diffuse = light->getDiffuseColour();
 	lightPtr->direction = light->getDirection();
 	lightPtr->padding = 0.0f;
+
+
 	deviceContext->Unmap(lightBuffer, 0);
 	deviceContext->PSSetConstantBuffers(0, 1, &lightBuffer);
 
