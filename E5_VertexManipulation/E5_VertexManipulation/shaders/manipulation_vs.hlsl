@@ -34,7 +34,15 @@ OutputType main(InputType input)
 	OutputType output;
 	
 	//get the wave to affect y
-    input.position.y += sin((input.position.x + input.position.z) * frequency + time * speed) * amplitude;
+    float px = frequency * input.position.x + speed * time;
+    float pz = frequency * input.position.z + speed * time;
+    input.position.y = amplitude * (sin(px) + cos(pz)/2);
+	
+    float dhdx = amplitude * frequency * cos(px);
+    float dhdz = -amplitude * frequency * sin(pz)/2;
+    input.normal = normalize(float3(-dhdx, 1, -dhdz));
+	
+    //input.position.y += sin((input.position.x + input.position.z) * frequency + time * speed) * amplitude;
 
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	output.position = mul(input.position, worldMatrix);

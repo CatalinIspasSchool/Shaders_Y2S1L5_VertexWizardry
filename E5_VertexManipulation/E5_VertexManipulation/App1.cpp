@@ -26,7 +26,7 @@ void App1::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeigh
 	light->setDirection(0.7f, -0.7f, 0.0f);
 
 	startTime = std::chrono::high_resolution_clock::now();
-	waveInfo = new XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
+	waveInfo = new XMFLOAT4(0,1,1,1);
 
 }
 
@@ -118,6 +118,10 @@ void App1::gui()
 	// Build UI
 	ImGui::Text("FPS: %.2f", timer->getFPS());
 	ImGui::Checkbox("Wireframe mode", &wireframeToggle);
+	ImGui::SliderFloat("Wave Frequency: ", &waveInfo->y, 0, 5);
+	ImGui::SliderFloat("Wave Amplitude X: ", &waveInfo->z, 0, 5);
+	//ImGui::SliderFloat("Wave Amplitude Z: ", waveInfo[3], 0, 5);
+	ImGui::SliderFloat("Wave Speed: ", &waveInfo->w, 0, 5);
 
 	// Render UI
 	ImGui::Render();

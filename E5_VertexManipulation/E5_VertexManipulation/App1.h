@@ -26,8 +26,9 @@ private:
 	ManipulationShader* shader;
 	PlaneMesh* mesh;
 	Light* light;
-	XMFLOAT4*waveInfo;
+	XMFLOAT4* waveInfo;
 	std::chrono::steady_clock::time_point startTime;
+	float dummyFloat;
 };
 
 #endif
